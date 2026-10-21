@@ -13,3 +13,7 @@ cadcraft-geom = { workspace = true }
 skrifa = { workspace = true }
 harfrust = { workspace = true }
 unicode-bidi = { workspace = true }
+
+[build-dependencies]
+# Embeds the fonts of the optional craft-fonts checkout (CRAFT_FONTS_DIR); nothing without it.
+craft-fonts-build = { git = "https://github.com/685ks/craft-fonts", rev = "f28afbb766ccddc9cfd136b8cf0b451a24149e1b" }

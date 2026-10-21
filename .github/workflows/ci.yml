@@ -1,0 +1,110 @@
+# The AGENTS.md quality gate (`cargo xtask ci`: fmt, clippy -D warnings, tests, assets, layers,
+# wasm) on every pull request and every push to main, plus the core crates' tests and a build
+# check of the desktop app on macOS and Windows.
+#
+# Every third-party action is pinned by commit SHA.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  # The 685ks/craft-fonts commit the text crate embeds (an optional build input, see
+  # crates/fonts/build.rs); the same commit as the craft-fonts-build pin in crates/fonts/Cargo.toml.
+  CRAFT_FONTS_REF: f28afbb766ccddc9cfd136b8cf0b451a24149e1b
+
+jobs:
+  gate:
+    name: cargo xtask ci (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # This fork carries no ArtCraft marks or links and no storytold/craft-common-actions
+      # workflows (house rules). LICENSE and NOTICE keep the upstream copyright line.
+      - name: Rebrand guard
+        run: |
+          set -euo pipefail
+          if git grep -nI 'craft-common-actions' -- . ':!.github/workflows/ci.yml'; then
+            echo "::error::storytold/craft-common-actions is not used in this fork"; exit 1
+          fi
+          if git grep -nIi -e 'getartcraft' -e 'discord\.gg' -e 'ai\.storyteller' -e 'storyteller\.ai' -- . ':!.github/workflows/ci.yml' ':!crates/ui-egui/src/project_links.rs'; then
+            echo "::error::ArtCraft/storyteller links or ids remain"; exit 1
+          fi
+          if [ -d docs/brand ]; then echo "::error::docs/brand (ArtCraft marks) must not exist"; exit 1; fi
+
+      - name: Check out craft-fonts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: 685ks/craft-fonts
+          ref: ${{ env.CRAFT_FONTS_REF }}
+          path: craft-fonts
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libxcursor-dev \
+            libxrandr-dev libxi-dev libgtk-3-dev libfontconfig1-dev libfreetype-dev mesa-vulkan-drivers
+
+      - name: Install Rust (stable + clippy, rustfmt, wasm32)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt \
+            --target wasm32-unknown-unknown
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Quality gate
+        env:
+          CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+        run: cargo xtask ci
+
+  platforms:
+    name: core tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust (stable)
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # Geometry, the DXF tag layer, the drawing database, text and constraints: the crates the
+      # rest of the app stands on, and the ones whose behaviour can differ by platform (paths,
+      # system fonts, floats).
+      - name: Test core crates
+        shell: bash
+        run: >-
+          cargo test --locked
+          -p cadcraft-geom -p cadcraft-dxf -p cadcraft-color -p cadcraft-doc -p cadcraft-fonts
+          -p cadcraft-constraints
+
+      - name: Check the desktop app builds
+        run: cargo check --locked -p cadcraft --bins

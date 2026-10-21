@@ -1,0 +1,13 @@
+# Packaging metadata read by the shared release workflow
+# (685ks/craft-actions/.github/workflows/release-rust-app.yml, called from
+# .github/workflows/release.yml). Asset names: cadcraft-<version>-<os>-<arch>[-portable].<ext>.
+id = "cadcraft"
+display_name = "CADCraft"
+bundle_id = "app.freedev.ainz.ks.CADCraft"
+publisher = "Arthavan Projects"
+description = "An open-source computer-aided design and drafting app: draft, dimension and plot 2D drawings, with DXF and DWG files"
+categories = ["Graphics", "Engineering"]
+icon_png = "assets/app-icon/hicolor/512x512/apps/app.freedev.ainz.ks.CADCraft.png"
+icon_icns = "assets/app-icon/cadcraft.icns"
+icon_ico = "assets/app-icon/cadcraft.ico"
+license = "MIT OR Apache-2.0"

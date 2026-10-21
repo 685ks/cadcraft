@@ -1,7 +1,8 @@
 //! Design tokens. Colours were measured from the reference look (dark slate chrome, near-black
 //! navy model space) and are CADCraft's own values; every widget reads them from here.
 //!
-//! Two palettes: [`Tokens::DARK`] (the original look) and [`Tokens::LIGHT`]. The interface theme
+//! Two palettes: [`Tokens::DARK`] (the house theme, Arthavan Dark, filled from `craft-tokens`) and
+//! [`Tokens::LIGHT`]. The interface theme
 //! changes the chrome (title and tool bar, menus, palettes, tabs, command line, status bar,
 //! dialogs); the drawing area keeps its model-space colours in both, as drawing colours are not
 //! part of the interface theme. [`Tokens::get`] returns the palette of the theme in use, which
@@ -9,6 +10,7 @@
 
 use std::cell::Cell;
 
+use craft_tokens::{Rgba, color as c};
 use egui::{Color32, FontFamily, FontId, Theme, Visuals};
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +21,7 @@ pub enum ThemePref {
     /// Follow the operating system's light/dark appearance, live.
     System,
     Light,
-    /// The default: CADCraft's original look.
+    /// The default: the house theme (Arthavan Dark, [`Tokens::DARK`]).
     #[default]
     Dark,
 }
@@ -127,50 +129,53 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// The house theme (Arthavan Dark), filled from `craft-tokens`: deep blue-black chrome, steel
+    /// accents, and the model space on the house background with map-line grid lines. Selection,
+    /// grips, snap markers and selection windows keep CAD's conventional colours, which read on it.
     pub const DARK: Tokens = Tokens {
-        chrome: Color32::from_rgb(0x3b, 0x44, 0x53),
-        chrome_dark: Color32::from_rgb(0x31, 0x38, 0x44),
-        panel: Color32::from_rgb(0x3c, 0x44, 0x52),
-        tab_active: Color32::from_rgb(0x4e, 0x5a, 0x6e),
-        control: Color32::from_rgb(0x50, 0x5a, 0x6d),
-        control_hover: Color32::from_rgb(0x5c, 0x67, 0x7c),
-        border: Color32::from_rgb(0x23, 0x29, 0x30),
-        canvas: Color32::from_rgb(0x22, 0x28, 0x2f),
-        grid_minor: Color32::from_rgb(0x29, 0x30, 0x3a),
-        grid_major: Color32::from_rgb(0x31, 0x39, 0x45),
-        axis_x: Color32::from_rgb(0x56, 0x28, 0x29),
-        axis_y: Color32::from_rgb(0x28, 0x4a, 0x2e),
-        text: Color32::from_rgb(0xd7, 0xdb, 0xe0),
-        text_dim: Color32::from_rgb(0xa3, 0xaa, 0xb4),
-        text_faint: Color32::from_rgb(0x87, 0x8d, 0x96),
-        icon: Color32::from_rgb(0xcf, 0xd4, 0xdb),
-        icon_accent: Color32::from_rgb(0x4f, 0xa3, 0xf7),
-        icon_point: Color32::from_rgb(0xf0, 0x7a, 0x3a),
-        accent: Color32::from_rgb(0x3d, 0x8b, 0xfd),
+        chrome: flat(c::SURFACE_PANEL, c::BG_BASE),
+        chrome_dark: c::BG_BASE.color32(),
+        panel: c::BG_SHEET.color32(),
+        tab_active: flat(alpha(c::ACCENT_LOW, 115), c::BG_SHEET),
+        control: flat(c::BORDER_LINE_SOFT, c::BG_SHEET),
+        control_hover: flat(c::BORDER_LINE, c::BG_SHEET),
+        border: flat(c::BORDER_LINE, c::BG_BASE),
+        canvas: c::BG_BASE.color32(),
+        grid_minor: flat(alpha(c::MAP_LINE, 15), c::BG_BASE),
+        grid_major: flat(alpha(c::MAP_LINE, 38), c::BG_BASE),
+        axis_x: flat(Rgba::new(0xd0, 0x30, 0x30, 77), c::BG_BASE),
+        axis_y: flat(Rgba::new(0x30, 0xb0, 0x40, 77), c::BG_BASE),
+        text: c::TEXT_STRONG.color32(),
+        text_dim: c::TEXT_MUTED.color32(),
+        text_faint: c::TEXT_FAINT.color32(),
+        icon: c::TEXT_STRONG.color32(),
+        icon_accent: c::ACCENT_BASE.color32(),
+        icon_point: c::ACCENT_GOLD.color32(),
+        accent: c::ACCENT_BASE.color32(),
         selection: Color32::from_rgb(0x4a, 0x8f, 0xff),
         hover: Color32::from_rgb(0x9c, 0xc6, 0xff),
         grip: Color32::from_rgb(0x2f, 0x6b, 0xff),
         grip_hot: Color32::from_rgb(0xff, 0x3b, 0x3b),
         grip_dyn: Color32::from_rgb(0x26, 0xc6, 0xe8),
         snap: Color32::from_rgb(0x2f, 0xd0, 0x62),
-        compare_this: Color32::from_rgb(0x4c, 0xd9, 0x7b),
-        compare_other: Color32::from_rgb(0xff, 0x5c, 0x5c),
-        compare_area: Color32::from_rgb(0xff, 0xb4, 0x3c),
+        compare_this: c::STATUS_OK.color32(),
+        compare_other: c::STATUS_ERROR.color32(),
+        compare_area: c::STATUS_WARN.color32(),
         window_stroke: Color32::from_rgb(0x6f, 0xa8, 0xff),
         crossing_stroke: Color32::from_rgb(0x7f, 0xe0, 0x7f),
-        cmd_bg: Color32::from_rgba_premultiplied(0x34, 0x3c, 0x4a, 0xf0),
-        toggle_on: Color32::from_rgb(0x3d, 0x8b, 0xfd),
-        field: Color32::from_rgb(0x31, 0x38, 0x44),
-        select_bg: Color32::from_rgb(0x3d, 0x8b, 0xfd),
-        canvas_ink: Color32::from_rgb(0xa3, 0xaa, 0xb4),
-        cmd_history: Color32::from_rgba_unmultiplied_const(0x2a, 0x30, 0x3a, 170),
-        cmd_border: Color32::from_rgb(0x55, 0x5f, 0x70),
-        cmd_keyword: Color32::from_rgb(0x8f, 0xc1, 0xff),
-        cmd_keyword_hover: Color32::from_rgb(0x2f, 0x5e, 0xa8),
-        list_bg: Color32::from_rgb(0x2b, 0x31, 0x3b),
-        list_row: Color32::from_rgb(0x3a, 0x42, 0x50),
-        warn: Color32::from_rgb(0xff, 0xd0, 0x80),
-        crosshair: Color32::from_rgb(0xe8, 0xe8, 0xe8),
+        cmd_bg: c::SURFACE_GLASS.color32(),
+        toggle_on: c::ACCENT_LOW.color32(),
+        field: c::BG_BASE.color32(),
+        select_bg: c::ACCENT_LOW.color32(),
+        canvas_ink: c::TEXT_MUTED.color32(),
+        cmd_history: alpha(c::SURFACE_PANEL, 170).color32(),
+        cmd_border: flat(c::BORDER_LINE, c::BG_SHEET),
+        cmd_keyword: c::ACCENT_BRIGHT.color32(),
+        cmd_keyword_hover: c::ACCENT_LOW.color32(),
+        list_bg: c::BG_SHEET.color32(),
+        list_row: flat(alpha(c::ACCENT_LOW, 90), c::BG_SHEET),
+        warn: c::STATUS_WARN.color32(),
+        crosshair: c::TEXT_INK.color32(),
         paper: Color32::WHITE,
     };
 
@@ -279,6 +284,23 @@ pub fn set_canvas(c: Canvas) {
 /// Half the side of an object snap marker, in points.
 pub fn snap_marker_half() -> f32 {
     CANVAS.with(Cell::get).snap_marker / 2.0
+}
+
+/// The house colour `top` composited over the opaque `base`, as an opaque egui colour: the web
+/// design system's translucent surfaces, flattened where nothing behind them can show through.
+const fn flat(top: Rgba, base: Rgba) -> Color32 {
+    Color32::from_rgb(mix_channel(top.r, base.r, top.a), mix_channel(top.g, base.g, top.a), mix_channel(top.b, base.b, top.a))
+}
+
+/// One channel of `top` over `base` at `alpha` out of 255, rounded.
+const fn mix_channel(top: u8, base: u8, alpha: u8) -> u8 {
+    let a = alpha as u32;
+    ((top as u32 * a + base as u32 * (255 - a) + 127) / 255) as u8
+}
+
+/// The house colour `c` with `a` out of 255 as its alpha.
+const fn alpha(c: Rgba, a: u8) -> Rgba {
+    Rgba::new(c.r, c.g, c.b, a)
 }
 
 /// Relative luminance of `c` (0 black … 1 white).
@@ -686,8 +708,10 @@ fn visuals(theme: Theme) -> Visuals {
     v.window_stroke = egui::Stroke::new(1.0, t.border);
     let shadow = Color32::from_black_alpha(if theme == Theme::Dark { 90 } else { 40 });
     v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 12, spread: 0, color: shadow };
-    v.window_corner_radius = egui::CornerRadius::same(6);
-    v.menu_corner_radius = egui::CornerRadius::same(5);
+    // The house theme's radii (craft-tokens); the light theme keeps its tighter corners.
+    let (window_r, menu_r) = if theme == Theme::Dark { (craft_tokens::radius::XL as u8, craft_tokens::radius::LG as u8) } else { (6, 5) };
+    v.window_corner_radius = egui::CornerRadius::same(window_r);
+    v.menu_corner_radius = egui::CornerRadius::same(menu_r);
     v
 }
 

@@ -8,7 +8,7 @@ version = "0.10.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.90"
-repository = "https://github.com/storytold/cadcraft"
+repository = "https://github.com/685ks/cadcraft"
 
 [workspace.dependencies]
 # internal
@@ -50,6 +50,8 @@ quick-xml = "0.41"
 # ui
 craft-ui = { version = "0.1.0", git = "https://github.com/storytold/craft-libs", rev = "5c874d51eeb3de70e735c8ce87a59a7dedd47675", features = ["serde"] }
 egui = "0.36"
+# The house design tokens (colours, radii) shared by the Arthavan Projects apps.
+craft-tokens = { git = "https://github.com/685ks/craft-libs", tag = "v0.1.0", version = "=0.1.0", features = ["egui"] }
 egui_kittest = "0.36"
 eframe = { version = "0.36", default-features = false }
 egui-wgpu = "0.36"

@@ -3,8 +3,10 @@
 //! Usage: `cadcraft [--control <port>] [--sample] [files…]`
 //!
 //! `--control <port>` (or `CADCRAFT_CONTROL_PORT`) starts a localhost JSON-lines control server:
-//! `{"id":1,"method":"cmdline.input","params":{"text":"circle 0,0 5"}}` → `{"id":1,"ok":true,…}`.
-//! See `cadcraft_ui_egui::control` for the methods.
+//! `{"id":1,"method":"cmdline.input","params":{"text":"circle 0,0 5"},"token":"<hex>"}` → `{"id":1,"ok":true,…}`.
+//! The token is made fresh for each launch and written owner-only to
+//! `<settings dir>/control-<port>.token`; see `cadcraft_engine::control_token`. See
+//! `cadcraft_ui_egui::control` and `docs/control-protocol.md` for the methods.
 //!
 //! `CADCRAFT_VSYNC=1` presents with vsync on Linux/BSD, where the default is the low-latency
 //! present mode (`CADCRAFT_VSYNC=0` selects that elsewhere); see `cadcraft_ui_egui::gpu::surface_config`.
@@ -97,6 +99,10 @@ impl eframe::App for App {
     fn on_exit(&mut self) {
         self.persist_workspace(true);
         self.cad.shutdown_autosave();
+        // The control token dies with this launch.
+        if let Some(path) = TOKEN_FILE.get() {
+            let _ = std::fs::remove_file(path);
+        }
     }
     /// Preferences (the interface theme) survive restarts; window and egui state are not kept.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -182,7 +188,23 @@ fn config_dir_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<s
     }
 }
 
-const APP_ID: &str = "ai.storyteller.cadcraft";
+/// This launch's control token file, removed on exit.
+static TOKEN_FILE: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+
+/// A fresh 256-bit control token, written owner-only to the settings directory for `port`.
+/// Returns the token and its file, or why the control server can't start safely.
+fn control_token(port: u16) -> Result<(String, std::path::PathBuf), String> {
+    use cadcraft_engine::control_token as ct;
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).map_err(|e| format!("no secure random numbers for the control token: {e}"))?;
+    let token = ct::to_hex(&bytes);
+    let dir = config_dir().ok_or("no settings directory for the control token (HOME, XDG_CONFIG_HOME or APPDATA is not set)")?;
+    let path = ct::token_path(&dir, port);
+    ct::write_token(&path, &token).map_err(|e| format!("writing {}: {e}", path.display()))?;
+    Ok((token, path))
+}
+
+const APP_ID: &str = "app.freedev.ainz.ks.CADCraft";
 
 /// Stencil bits of the window's render pass (see `NativeOptions::stencil_buffer`).
 const STENCIL_BITS: u8 = 8;
@@ -347,8 +369,15 @@ fn main() -> eframe::Result {
                 app.set_wgpu(rs, eframe::egui_wgpu::depth_format_from_bits(0, STENCIL_BITS));
             }
             if let Some(port) = control_port {
-                let rx = control_server::start(port, cc.egui_ctx.clone());
-                app = app.with_control(rx);
+                match control_token(port) {
+                    Ok((token, path)) => {
+                        log::info!("control token in {}", path.display());
+                        let rx = control_server::start(port, std::sync::Arc::from(token), cc.egui_ctx.clone());
+                        app = app.with_control(rx);
+                        let _ = TOKEN_FILE.set(path);
+                    }
+                    Err(e) => log::error!("control channel not started: {e}"),
+                }
             }
             if sample {
                 let _ = app.run("ui.sample", serde_json::json!({}));
