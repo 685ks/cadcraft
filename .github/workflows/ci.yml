@@ -46,6 +46,16 @@ jobs:
           fi
           if [ -d docs/brand ]; then echo "::error::docs/brand (ArtCraft marks) must not exist"; exit 1; fi
 
+      # A full workspace build and test with debug info outgrows the runner's free disk ("No
+      # space left on device"), so drop preinstalled toolchains this job never uses.
+      - name: Free runner disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+          sudo docker image prune --all --force > /dev/null 2>&1 || true
+          df -h /
+
       - name: Check out craft-fonts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -73,6 +83,9 @@ jobs:
       - name: Quality gate
         env:
           CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+          # No debug info: it multiplies the target dir and CI never runs a debugger.
+          CARGO_PROFILE_DEV_DEBUG: "0"
+          CARGO_PROFILE_TEST_DEBUG: "0"
         run: cargo xtask ci
 
   platforms:
