@@ -6,14 +6,14 @@
 
 <p align="center">
   A fast, open-source CAD workflow: the command line, object snaps, layers,
-  dimensions, hatches, blocks and DXF drawings you already know. It runs natively on macOS,
-  Windows, Linux and FreeBSD, and in the browser via WebAssembly.<br>
+  dimensions, hatches, blocks and DXF drawings you already know. It runs natively on
+  Windows, and in the browser via WebAssembly.<br>
   <i>Maintained by Arthavan Projects: a fork of <a href="https://github.com/storytold/cadcraft">storytold/cadcraft</a>, not affiliated with or endorsed by ArtCraft.</i>
 </p>
 
 <p align="center">
   <img alt="Written in Rust" src="https://img.shields.io/badge/written%20in-Rust-0b6f88?style=flat-square&logo=rust&logoColor=white">
-  <img alt="Runs on macOS, Windows, Linux, FreeBSD and the web" src="https://img.shields.io/badge/runs%20on-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20BSD%20%C2%B7%20Web-14a3c7?style=flat-square">
+  <img alt="Runs on Windows and the web" src="https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20Web-14a3c7?style=flat-square">
   <img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-0b6f88?style=flat-square">
   <img alt="Agent-drivable over MCP" src="https://img.shields.io/badge/agents-MCP-14a3c7?style=flat-square">
   <img alt="Status: early development" src="https://img.shields.io/badge/status-early%20development-f07a3a?style=flat-square">
@@ -289,31 +289,6 @@ Remove-Item Env:WGPU_BACKEND                     # restore the default for later
 
 An explicit `gl` override can bring the driver crash back on affected systems. The macOS, Linux
 and web backend defaults are unchanged.
-
-### macOS
-
-| Build | File | Notes |
-|---|---|---|
-| App, universal (Apple silicon + Intel) | `cadcraft-<ver>-macos-universal.dmg` | Signed and notarized |
-| Command-line tool, universal | `cadcraft-cli-<ver>-macos-universal.zip` | Signed and notarized |
-
-### Linux
-
-| Format | x86_64 | aarch64 (ARM64) | Notes |
-|---|---|---|---|
-| AppImage | `cadcraft-<ver>-linux-x86_64.AppImage` | `cadcraft-<ver>-linux-aarch64.AppImage` | Runs anywhere; updates itself with [AppImageUpdate](https://github.com/AppImageCommunity/AppImageUpdate) (`.zsync` files) |
-| Flatpak | `cadcraft-<ver>-linux-x86_64.flatpak` | `cadcraft-<ver>-linux-aarch64.flatpak` | Sandboxed; `flatpak install --user <file>` |
-| Debian/Ubuntu | `cadcraft-<ver>-linux-x86_64.deb` | `cadcraft-<ver>-linux-aarch64.deb` | |
-| Fedora/RHEL/openSUSE | `cadcraft-<ver>-linux-x86_64.rpm` | `cadcraft-<ver>-linux-aarch64.rpm` | |
-| Tarball | `cadcraft-<ver>-linux-x86_64.tar.gz` | `cadcraft-<ver>-linux-aarch64.tar.gz` | Unpack anywhere |
-
-RISC-V (riscv64): `cadcraft-<ver>-linux-riscv64.tar.gz`, cross-compiled; needs glibc 2.39 or newer (Ubuntu 24.04+, Debian 13+).
-
-### FreeBSD
-
-| Build | File |
-|---|---|
-| x86_64 | `cadcraft-<ver>-freebsd-x86_64.tar.gz` |
 
 ### Web (WebAssembly)
 
