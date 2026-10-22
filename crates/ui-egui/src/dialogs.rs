@@ -330,9 +330,13 @@ fn about(ctx: &egui::Context, open: &mut bool) {
                     ui.label(crate::tf!("Version {version}", version = env!("CARGO_PKG_VERSION")));
                     ui.label(crate::tl!("Computer-aided design and drafting: an open-source, clean-room CAD application written in pure Rust."));
                     ui.add_space(6.0);
-                    ui.label(RichText::new(crate::tl!("One of the Crafting Apps by the ArtCraft team and community.")).color(t.text_dim));
-                    ui.hyperlink_to("getartcraft.com/apps/cadcraft", "https://getartcraft.com/apps/cadcraft");
-                    ui.hyperlink_to(crate::tl!("Join us on Discord"), "https://discord.gg/artcraft");
+                    // Legal text: the same in every interface language.
+                    ui.label(RichText::new(crate::project_links::FORK_NOTE).color(t.text_dim));
+                    if crate::project_links::launcher_managed() {
+                        ui.label(RichText::new(crate::project_links::LAUNCHER_UPDATES_NOTE).color(t.text_dim));
+                    }
+                    ui.hyperlink_to(format!("{}: github.com/685ks/cadcraft", crate::tl!("Source code")), crate::project_links::GITHUB);
+                    ui.hyperlink_to(crate::tl!("Report an issue"), crate::project_links::ISSUES);
                     ui.add_space(6.0);
                     ui.label(RichText::new(crate::tl!("MIT OR Apache-2.0. Not affiliated with Autodesk, Inc.")).small().color(t.text_faint));
                 }

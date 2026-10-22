@@ -23,6 +23,9 @@ pub struct Remote {
     next_id: u64,
     /// Open the app when nothing answers (see [`Remote::lazy`]).
     launch: bool,
+    /// The app's control token; `None` looks it up at each call (`CADCRAFT_CONTROL_TOKEN` or the
+    /// app's token file, see `cadcraft_engine::control_token`), so an app opened later is found.
+    token: Option<String>,
 }
 
 /// How long a launched app has to open its control port.
@@ -30,7 +33,13 @@ const LAUNCH_WAIT: Duration = Duration::from_secs(30);
 
 impl Remote {
     pub fn connect(addr: &str) -> std::io::Result<Self> {
-        let mut r = Self { addr: addr.to_string(), conn: None, next_id: 1, launch: false };
+        let mut r = Self { addr: addr.to_string(), conn: None, next_id: 1, launch: false, token: None };
+        r.reconnect()?;
+        Ok(r)
+    }
+    /// [`Remote::connect`] with the control token given instead of looked up.
+    pub fn connect_with_token(addr: &str, token: &str) -> std::io::Result<Self> {
+        let mut r = Self { addr: addr.to_string(), conn: None, next_id: 1, launch: false, token: Some(token.to_string()) };
         r.reconnect()?;
         Ok(r)
     }
@@ -38,7 +47,7 @@ impl Remote {
     /// the server before the app is open. With `launch`, a call that finds nothing at `addr`
     /// opens the app with that control port first (macOS) and waits for it.
     pub fn lazy(addr: &str, launch: bool) -> Self {
-        Self { addr: addr.to_string(), conn: None, next_id: 1, launch }
+        Self { addr: addr.to_string(), conn: None, next_id: 1, launch, token: None }
     }
     /// Connect, opening the app first when asked to and nothing answers.
     fn reach(&mut self) -> std::io::Result<()> {
@@ -158,11 +167,26 @@ fn is_read_only(method: &str) -> bool {
     )
 }
 
+impl Remote {
+    /// The token to send: the one given, else the app's for this address's port.
+    fn token(&self) -> Option<String> {
+        if let Some(t) = &self.token {
+            return Some(t.clone());
+        }
+        let port = self.addr.rsplit(':').next()?.parse::<u16>().ok()?;
+        cadcraft_engine::control_token::lookup(port)
+    }
+}
+
 impl Backend for Remote {
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String> {
         let id = self.next_id;
         self.next_id += 1;
-        let line = json!({"id": id, "method": method, "params": params}).to_string();
+        let mut request = json!({"id": id, "method": method, "params": params});
+        if let Some(token) = self.token() {
+            request["token"] = json!(token);
+        }
+        let line = request.to_string();
         let reply = match self.roundtrip(&line) {
             Ok(r) => r,
             // Resend only when the request cannot have been applied. After a sent mutation with no reply the outcome is unknown, and
@@ -398,5 +422,25 @@ mod tests {
             assert!(err.starts_with("timeout") && err.contains(want), "{err}");
             server.join().unwrap();
         }
+    }
+
+    /// Every request carries the control token, so the app serves the connection.
+    #[test]
+    fn requests_carry_the_control_token() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let server = std::thread::spawn(move || {
+            let (conn, _) = listener.accept().unwrap();
+            let mut line = String::new();
+            BufReader::new(conn.try_clone().unwrap()).read_line(&mut line).unwrap();
+            let mut out = conn;
+            writeln!(out, "{}", json!({"id": 1, "ok": true, "result": "pong"})).unwrap();
+            serde_json::from_str::<Value>(&line).unwrap()
+        });
+        let mut remote = Remote::connect_with_token(&addr, "abc123").unwrap();
+        assert_eq!(remote.call("ping", json!({})).unwrap(), json!("pong"));
+        let request = server.join().unwrap();
+        assert_eq!(request["token"], "abc123", "{request}");
+        assert_eq!(request["method"], "ping");
     }
 }

@@ -6,6 +6,12 @@
 //! closed, so nothing sent after it runs. Every resource a client can hold is bounded
 //! ([`Limits`]): simultaneous connections, request line length, queued requests, and how long a
 //! socket may sit idle or blocked on a write.
+//!
+//! Only clients that hold this launch's token are served (see `cadcraft_engine::control_token`):
+//! the first request on a connection carries it as `"token"`. A request without the right token
+//! gets one `unauthorized` reply and the connection is closed before anything is dispatched.
+//! The `auth` method checks a token without doing anything else. Peers that are not on the
+//! loopback interface are dropped.
 
 use std::io::{BufRead, BufReader, ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -48,11 +54,15 @@ impl Default for Limits {
     }
 }
 
-pub fn start(port: u16, ctx: egui::Context) -> Receiver<ControlRequest> {
+/// The reply to a request that doesn't carry this launch's token.
+const UNAUTHORIZED: &str =
+    "unauthorized: send this launch's control token as \"token\" (it is in <settings dir>/control-PORT.token); closing the connection";
+
+pub fn start(port: u16, token: Arc<str>, ctx: egui::Context) -> Receiver<ControlRequest> {
     match TcpListener::bind(("127.0.0.1", port)) {
         Ok(l) => {
             log::info!("control server listening on 127.0.0.1:{port}");
-            serve_listener(l, Limits::default(), ctx)
+            serve_listener(l, Limits::default(), token, ctx)
         }
         Err(e) => {
             log::error!("control server failed to bind 127.0.0.1:{port}: {e}");
@@ -62,9 +72,9 @@ pub fn start(port: u16, ctx: egui::Context) -> Receiver<ControlRequest> {
 }
 
 /// Accept connections on `listener` under `limits`; requests arrive on the returned receiver.
-fn serve_listener(listener: TcpListener, limits: Limits, ctx: egui::Context) -> Receiver<ControlRequest> {
+fn serve_listener(listener: TcpListener, limits: Limits, token: Arc<str>, ctx: egui::Context) -> Receiver<ControlRequest> {
     let (tx, rx) = sync_channel::<ControlRequest>(limits.queue.max(1));
-    std::thread::spawn(move || accept_loop(listener, tx, ctx, limits));
+    std::thread::spawn(move || accept_loop(listener, tx, ctx, limits, token));
     rx
 }
 
@@ -78,9 +88,13 @@ impl Drop for Slot {
     }
 }
 
-fn accept_loop(listener: TcpListener, tx: SyncSender<ControlRequest>, ctx: egui::Context, limits: Limits) {
+fn accept_loop(listener: TcpListener, tx: SyncSender<ControlRequest>, ctx: egui::Context, limits: Limits, token: Arc<str>) {
     let open = Arc::new(AtomicUsize::new(0));
     for mut stream in listener.incoming().flatten() {
+        // The listener is bound to loopback; anything else is dropped without a word.
+        if !stream.peer_addr().is_ok_and(|a| a.ip().is_loopback()) {
+            continue;
+        }
         let _ = stream.set_write_timeout(Some(limits.write_timeout));
         if open.fetch_add(1, Ordering::SeqCst) >= limits.max_clients {
             open.fetch_sub(1, Ordering::SeqCst);
@@ -90,9 +104,10 @@ fn accept_loop(listener: TcpListener, tx: SyncSender<ControlRequest>, ctx: egui:
         let slot = Slot(Arc::clone(&open));
         let tx = tx.clone();
         let ctx = ctx.clone();
+        let token = Arc::clone(&token);
         let _ = std::thread::Builder::new().spawn(move || {
             let _slot = slot;
-            serve(stream, &tx, &ctx, limits);
+            serve(stream, &tx, &ctx, limits, &token);
         });
     }
 }
@@ -131,6 +146,8 @@ enum Line {
         id: Value,
         method: String,
         params: Value,
+        /// The control token the request carries, if any.
+        token: Option<String>,
     },
     Blank,
     /// Not a request: reply with this error and close the connection.
@@ -162,6 +179,7 @@ fn parse_line(bytes: &[u8]) -> Line {
         id: obj.get("id").cloned().unwrap_or(Value::Null),
         method: method.to_string(),
         params: obj.get("params").cloned().unwrap_or(json!({})),
+        token: obj.get("token").and_then(Value::as_str).map(str::to_string),
     }
 }
 
@@ -172,7 +190,7 @@ fn is_http_request_line(text: &str) -> bool {
         || text.rsplit_once(' ').is_some_and(|(_, version)| version.starts_with("HTTP/"))
 }
 
-fn serve(stream: TcpStream, tx: &SyncSender<ControlRequest>, ctx: &egui::Context, limits: Limits) {
+fn serve(stream: TcpStream, tx: &SyncSender<ControlRequest>, ctx: &egui::Context, limits: Limits, token: &str) {
     if stream.set_read_timeout(Some(limits.idle_timeout)).is_err() || stream.set_write_timeout(Some(limits.write_timeout)).is_err() {
         return;
     }
@@ -180,6 +198,8 @@ fn serve(stream: TcpStream, tx: &SyncSender<ControlRequest>, ctx: &egui::Context
     let mut out = stream;
     let mut reader = BufReader::new(read);
     let mut buf = Vec::new();
+    // Set by the first request that carries the right token; nothing is dispatched before.
+    let mut authorized = false;
     loop {
         let reject = match read_bounded_line(&mut reader, &mut buf, limits.max_line) {
             Ok(false) => break,
@@ -190,7 +210,20 @@ fn serve(stream: TcpStream, tx: &SyncSender<ControlRequest>, ctx: &egui::Context
             Ok(true) => match parse_line(&buf) {
                 Line::Blank => continue,
                 Line::Reject(e) => e,
-                Line::Request { id, method, params } => {
+                Line::Request { id, method, params, token: given } => {
+                    let good = given.as_deref().is_some_and(|g| cadcraft_engine::control_token::matches(token, g));
+                    // A wrong token closes the connection, even on an authorized one.
+                    if !(good || authorized && given.is_none()) {
+                        let _ = writeln!(out, "{}", json!({"id": id, "ok": false, "error": UNAUTHORIZED}));
+                        break;
+                    }
+                    authorized = true;
+                    if method == "auth" {
+                        if writeln!(out, "{}", json!({"id": id, "ok": true})).is_err() {
+                            break;
+                        }
+                        continue;
+                    }
                     let (req, pending) = ControlRequest::new(method, params);
                     let mut r = match tx.try_send(req) {
                         Ok(()) => {
@@ -255,11 +288,24 @@ mod tests {
         }
     }
 
+    /// The token the test servers expect.
+    const TOKEN: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+    /// The `auth` line that opens an authorized connection.
+    const AUTH: &[u8] = b"{\"id\":0,\"method\":\"auth\",\"token\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"}\n";
+
+    /// `input` after the `auth` line.
+    fn authed(input: &[u8]) -> Vec<u8> {
+        let mut v = AUTH.to_vec();
+        v.extend_from_slice(input);
+        v
+    }
+
     /// The control server on a loopback port under `limits`; requests arrive on the receiver.
     fn serve_with(limits: Limits) -> (std::net::SocketAddr, Receiver<ControlRequest>) {
         let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let addr = listener.local_addr().unwrap();
-        (addr, serve_listener(listener, limits, egui::Context::default()))
+        (addr, serve_listener(listener, limits, Arc::from(TOKEN), egui::Context::default()))
     }
 
     /// The control server on a loopback port, with a stand-in UI that echoes each method.
@@ -332,21 +378,25 @@ mod tests {
     fn a_full_queue_answers_busy() {
         let (addr, rx) = serve_with(short());
         // No UI drains the one-place queue: the first request fills it, the second finds it full.
-        let first = std::thread::spawn(move || exchange(addr, b"{\"id\":1,\"method\":\"m\"}\n"));
+        let first = std::thread::spawn(move || exchange(addr, &authed(b"{\"id\":1,\"method\":\"m\"}\n")));
         let deadline = std::time::Instant::now() + Duration::from_secs(4);
         let busy = loop {
             let mut c = TcpStream::connect(addr).unwrap();
             c.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-            c.write_all(b"{\"id\":2,\"method\":\"m\"}\n").unwrap();
+            c.write_all(&authed(b"{\"id\":2,\"method\":\"m\"}\n")).unwrap();
+            let mut r = BufReader::new(c);
             let mut line = String::new();
-            BufReader::new(c).read_line(&mut line).unwrap();
+            r.read_line(&mut line).unwrap();
+            assert!(line.contains("\"ok\":true"), "auth: {line}");
+            line.clear();
+            r.read_line(&mut line).unwrap();
             let v: Value = serde_json::from_str(&line).unwrap();
             if v["error"].as_str().is_some_and(|e| e.starts_with("busy")) || std::time::Instant::now() > deadline {
                 break v;
             }
         };
         assert_eq!((busy["id"].as_i64(), busy["state"].as_str()), (Some(2), Some("not-run")), "{busy}");
-        assert_eq!(first.join().unwrap()[0]["state"], "not-run");
+        assert_eq!(first.join().unwrap()[1]["state"], "not-run");
         drop(rx);
     }
 
@@ -355,8 +405,11 @@ mod tests {
         let addr = serve_echo();
         let mut c = TcpStream::connect(addr).unwrap();
         c.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-        c.write_all(b"{\"id\":3,\"method\":\"ping\"}\r\n\n{\"id\":4,\"method\":\"pong\"}\n").unwrap();
+        c.write_all(&authed(b"{\"id\":3,\"method\":\"ping\"}\r\n\n{\"id\":4,\"method\":\"pong\"}\n")).unwrap();
         let mut r = BufReader::new(c);
+        let mut auth = String::new();
+        r.read_line(&mut auth).unwrap();
+        assert!(auth.contains("\"ok\":true"), "{auth}");
         for (id, method) in [(3, "ping"), (4, "pong")] {
             let mut line = String::new();
             r.read_line(&mut line).unwrap();
@@ -376,5 +429,38 @@ mod tests {
         BufReader::new(&mut extra).read_line(&mut line).unwrap();
         assert!(line.contains("too many control connections"), "{line}");
         drop(held);
+    }
+
+    #[test]
+    fn a_request_without_the_token_is_refused_and_not_dispatched() {
+        let (addr, rx) = serve_with(short());
+        for input in [
+            &b"{\"id\":1,\"method\":\"cmdline.input\",\"params\":{\"text\":\"erase all\"}}\n"[..],
+            b"{\"id\":1,\"method\":\"ping\",\"token\":\"wrong\"}\n",
+            b"{\"id\":1,\"method\":\"auth\",\"token\":\"\"}\n",
+        ] {
+            let mut input = input.to_vec();
+            input.extend_from_slice(AUTH);
+            let replies = exchange(addr, &input);
+            assert_eq!(replies.len(), 1, "the connection closes after the refusal: {replies:?}");
+            assert_eq!(replies[0]["ok"], false);
+            assert!(replies[0]["error"].as_str().unwrap().starts_with("unauthorized"), "{replies:?}");
+        }
+        assert!(rx.try_recv().is_err(), "a request without the token reached the app");
+    }
+
+    #[test]
+    fn the_token_on_a_request_authorizes_the_connection() {
+        let addr = serve_echo();
+        let mut c = TcpStream::connect(addr).unwrap();
+        c.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let first = format!("{{\"id\":1,\"method\":\"ping\",\"token\":\"{TOKEN}\"}}\n");
+        c.write_all(first.as_bytes()).unwrap();
+        c.write_all(b"{\"id\":2,\"method\":\"pong\"}\n{\"id\":3,\"method\":\"ping\",\"token\":\"bad\"}\n").unwrap();
+        let replies: Vec<Value> = BufReader::new(c).lines().map(|l| serde_json::from_str(&l.unwrap()).unwrap()).collect();
+        assert_eq!(replies.len(), 3, "{replies:?}");
+        assert_eq!((replies[0]["id"].as_i64(), replies[0]["method"].as_str()), (Some(1), Some("ping")));
+        assert_eq!((replies[1]["id"].as_i64(), replies[1]["method"].as_str()), (Some(2), Some("pong")), "later requests need no token");
+        assert!(replies[2]["error"].as_str().unwrap().starts_with("unauthorized"), "a wrong token closes the connection");
     }
 }

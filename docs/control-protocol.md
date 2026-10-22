@@ -9,6 +9,27 @@ Start the desktop app with `--control PORT` (or `CADCRAFT_CONTROL_PORT=PORT`). I
 {"id": 1, "ok": true, "result": {"prompt": "Command:", "output": ["Command: CIRCLE"], ...}}
 ```
 
+## Authentication
+
+Each launch makes a random 256-bit token and writes it as 64 hex digits to
+`<settings dir>/control-PORT.token`, readable by the owner only (mode 0600 on Unix; on Windows the
+per-user `%APPDATA%` ACL). The file is removed when the app quits. The settings directory is
+`CADCRAFT_CONFIG_DIR` if set, else `~/Library/Application Support/CADCraft` on macOS,
+`%APPDATA%\CADCraft` on Windows, and `$XDG_CONFIG_HOME/cadcraft` or `~/.config/cadcraft` elsewhere.
+
+The first request on a connection must carry the token as `"token"`:
+
+```json
+{"id": 1, "method": "ping", "params": {}, "token": "<64 hex digits>"}
+```
+
+Later requests on that connection may leave it out. A request without the right token gets one
+`{"id": …, "ok": false, "error": "unauthorized: …"}` reply and the connection is closed before
+anything reaches the app; a wrong token closes an authorized connection too. `{"method": "auth",
+"token": …}` checks a token without doing anything else. Connections that don't come from the
+loopback interface are dropped. `cadcraft-cli mcp --connect` reads the token file, or the
+`CADCRAFT_CONTROL_TOKEN` environment variable when it is set.
+
 Errors come back as `{"id": …, "ok": false, "error": "message"}`. An unknown method's error points
 to `control.methods`, which lists the methods the server answers.
 

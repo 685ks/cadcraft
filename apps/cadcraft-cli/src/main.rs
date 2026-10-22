@@ -73,7 +73,10 @@ image framing (png 2400x1600, svg, pdf; always model space):
                            scaled to fit the image without distortion.
   --view extents           always fit the drawing extents.
   --view current           the current view (as last set by zoom/pan/view.set; a freshly
-                           opened drawing's view is its extents plus a 10% margin).";
+                           opened drawing's view is its extents plus a 10% margin).
+
+mcp --connect sends the app's control token, read from <settings dir>/control-PORT.token (written
+by the app at launch) or from CADCRAFT_CONTROL_TOKEN.";
 
 /// What part of model space an image export shows.
 #[derive(Clone, Copy, Debug, PartialEq)]

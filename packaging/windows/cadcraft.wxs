@@ -13,16 +13,18 @@
   unless asked: `msiexec /i cadcraft.msi /qn DESKTOPSHORTCUT=1`. Upgrades keep the previous choice
   unless DESKTOPSHORTCUT=1 or DESKTOPSHORTCUT=0 is given.
 -->
+<!-- UpgradeCode is fixed for this fork of CADCraft (generated 2026-10-21, distinct from upstream's): never change it, or upgrades
+     stop replacing the installed version. -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package
       Name="CADCraft"
-      Manufacturer="Learning Machines LLC"
+      Manufacturer="Arthavan Projects"
       Version="$(var.Version)"
-      UpgradeCode="119D7D76-0167-4A9E-8F37-09DA0235F68E"
+      UpgradeCode="2C9B1DFC-2A13-473F-A165-E6A2006CD3DC"
       Scope="perMachine"
       Compressed="yes"
       Language="1033">
-    <SummaryInformation Description="CADCraft computer-aided design" Manufacturer="Learning Machines LLC" />
+    <SummaryInformation Description="CADCraft computer-aided design" Manufacturer="Arthavan Projects" />
     <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
          (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
     <MajorUpgrade AllowSameVersionUpgrades="yes"
@@ -31,9 +33,9 @@
 
     <Icon Id="CadcraftIcon.ico" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="CadcraftIcon.ico" />
-    <Property Id="ARPURLINFOABOUT" Value="https://getartcraft.com/apps/cadcraft" />
-    <Property Id="ARPURLUPDATEINFO" Value="https://getartcraft.com/apps/cadcraft" />
-    <Property Id="ARPHELPLINK" Value="https://discord.gg/artcraft" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/685ks/cadcraft" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/685ks/cadcraft/releases" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/685ks/cadcraft/issues" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="CADCraft" />
@@ -48,7 +50,7 @@
     <!-- The previous install's choice (the shortcut component's HKCU key path, so the installing
          user's), so upgrades keep the desktop shortcut without asking again. -->
     <Property Id="PREVIOUSDESKTOPSHORTCUT">
-      <RegistrySearch Id="PreviousDesktopShortcut" Root="HKCU" Key="Software\Learning Machines LLC\CADCraft"
+      <RegistrySearch Id="PreviousDesktopShortcut" Root="HKCU" Key="Software\Arthavan Projects\CADCraft"
           Name="DesktopShortcut" Type="raw" />
     </Property>
     <!-- Only when DESKTOPSHORTCUT wasn't given; "first" runs it once (in the UI sequence when there
@@ -90,7 +92,7 @@
           Condition="DESKTOPSHORTCUT = &quot;1&quot;">
         <Shortcut Id="DesktopShortcut" Name="CADCraft" Description="CADCraft computer-aided design"
             Target="[INSTALLFOLDER]cadcraft.exe" WorkingDirectory="INSTALLFOLDER" Icon="CadcraftIcon.ico" IconIndex="0" />
-        <RegistryValue Root="HKCU" Key="Software\Learning Machines LLC\CADCraft" Name="DesktopShortcut"
+        <RegistryValue Root="HKCU" Key="Software\Arthavan Projects\CADCraft" Name="DesktopShortcut"
             Value="1" Type="string" KeyPath="yes" />
       </Component>
     </ComponentGroup>

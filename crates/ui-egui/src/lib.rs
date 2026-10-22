@@ -42,6 +42,7 @@ pub mod options;
 pub mod palettes;
 pub mod parametric;
 pub mod plotstyles;
+pub mod project_links;
 pub mod quick;
 pub mod shortcut_menus;
 pub mod theme;

@@ -1,4 +1,4 @@
-//! Fonts from the optional craft-fonts build input (<https://github.com/storytold/craft-fonts>).
+//! Fonts from the optional craft-fonts build input (<https://github.com/685ks/craft-fonts>).
 //!
 //! Built with `CRAFT_FONTS_DIR=<craft-fonts checkout>`, `build.rs` embeds the fonts listed in its
 //! `fonts/manifest.txt` (web builds: only BIZ UDPGothic Regular and the Arabic faces).
@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn no_barred_family_is_embedded() {
         // AGENTS.md: no Adobe fonts. Noto Sans CJK is Source Han Sans; `build.rs` skips them.
-        const BARRED: [&str; 5] = ["Source Han", "Source Serif", "Source Sans", "Noto Sans CJK", "Noto Serif CJK"];
+        const BARRED: [&str; 7] = ["Source Han", "Source Serif", "Source Sans", "Noto Sans CJK", "Noto Serif CJK", "Noto Sans KR", "Noto Sans TC"];
         for f in CRAFT_FONTS {
             assert!(!BARRED.iter().any(|b| f.family.starts_with(b)), "{} is barred", f.family);
         }
