@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- CADCraft app icon, Arthavan Projects house style: a light glyph on a dark tile in the app's own tint.
+       Original artwork drawn in code, MIT OR Apache-2.0 like the repository. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a234d"/>
+      <stop offset="1" stop-color="#0c0a1a"/>
+    </linearGradient>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="4"/>
+  <g fill="none" stroke="#a498e1" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="256" cy="256" r="118" fill="#45397f" fill-opacity="0.35"/>
+    <path d="M256 92 V 180 M256 332 V 420 M92 256 H 180 M332 256 H 420" stroke="#cbc2f4" stroke-width="16"/>
+    <rect x="232" y="232" width="48" height="48" fill="none" stroke="#cbc2f4" stroke-width="16" stroke-linejoin="miter"/>
+  </g>
+  </g>
+</svg>

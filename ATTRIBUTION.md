@@ -21,20 +21,21 @@ Generated-in-code assets are original and have no file to list:
 
 | Asset | Author | Source | Licence | Notes |
 |---|---|---|---|---|
-| `assets/app-icon/hicolor/128x128/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/16x16/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/24x24/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/256x256/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/32x32/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/48x48/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/512x512/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/hicolor/64x64/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | generated from `assets/app-icon/cadcraft-1024.png` | MIT OR Apache-2.0 | Linux hicolor icon |
-| `assets/app-icon/cadcraft.icns` | CADCraft contributors | generated (packaging/icons.sh) | MIT OR Apache-2.0 | macOS icon |
-| `assets/app-icon/cadcraft.ico` | CADCraft contributors | generated (packaging/icons.sh) | MIT OR Apache-2.0 | Windows icon |
-| `assets/app-icon/cadcraft-64.png` | CADCraft contributors | generated | MIT OR Apache-2.0 | |
-| `assets/app-icon/cadcraft-256.png` | CADCraft contributors | generated | MIT OR Apache-2.0 | |
-| `assets/app-icon/cadcraft-1024.png` | CADCraft contributors | generated | MIT OR Apache-2.0 | |
-| `assets/app-icon/cadcraft-macos-512.png` | CADCraft contributors | generated (macOS margin variant) | MIT OR Apache-2.0 | |
+| `assets/app-icon/hicolor/128x128/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/16x16/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/24x24/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/256x256/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/32x32/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/48x48/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/512x512/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/hicolor/64x64/apps/app.freedev.ainz.ks.CADCraft.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Linux hicolor icon |
+| `assets/app-icon/cadcraft.svg` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Master app icon; `packaging/icons.sh` renders every other app-icon file from it |
+| `assets/app-icon/cadcraft.icns` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | macOS icon |
+| `assets/app-icon/cadcraft.ico` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 | Windows icon |
+| `assets/app-icon/cadcraft-64.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 |  |
+| `assets/app-icon/cadcraft-256.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 |  |
+| `assets/app-icon/cadcraft-1024.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 |  |
+| `assets/app-icon/cadcraft-macos-512.png` | CADCraft contributors | original work: drawn in code as SVG in the Arthavan Projects house style (`#a498e1` glyph on a `#2a234d` to `#0c0a1a` tile), master `assets/app-icon/cadcraft.svg` | MIT OR Apache-2.0 |  |
 | `examples/apartment.dxf` | CADCraft contributors | sample drawing made with cadcraft-cli commands | MIT OR Apache-2.0 | Original |
 | `docs/images/ui-apartment.png` | CADCraft contributors | screenshot of CADCraft itself (examples/apartment.dxf) | MIT OR Apache-2.0 | Original; no Autodesk UI |
 | `docs/images/ui-layout.png` | CADCraft contributors | screenshot of CADCraft itself (a layout of examples/apartment.dxf) | MIT OR Apache-2.0 | Original; no Autodesk UI |
